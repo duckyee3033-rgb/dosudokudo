@@ -1,114 +1,251 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-<meta charset="UTF-8">
-<title>Custom Sudoku</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>두수도쿠 | 웹 버전</title>
+  <style>
+    :root {
+      --bg: #5b2c83;
+      --panel: #f8f6ff;
+      --accent: #7d44b3;
+      --accent-2: #9151cf;
+      --error: #d64161;
+      --ok: #2a9d8f;
+      --grid-line: #8c8c8c;
+      --grid-bold: #2f2f2f;
+    }
 
-<style>
+    * { box-sizing: border-box; }
+
     body {
-        margin: 0;
-        background: #5b2c83; /* 자주색 */
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        height: 100vh;
-        font-family: Arial, sans-serif;
-        overflow: hidden;
+      margin: 0;
+      min-height: 100vh;
+      background: radial-gradient(circle at top, #7345a4 0%, var(--bg) 60%);
+      display: grid;
+      place-items: center;
+      font-family: "Pretendard", "Noto Sans KR", Arial, sans-serif;
+      color: #1f1730;
+      padding: 16px;
     }
 
-    .container {
-        position: relative;
-        width: 400px;
-        height: 400px;
+    .app {
+      width: min(94vw, 760px);
+      background: var(--panel);
+      border-radius: 20px;
+      padding: 20px;
+      box-shadow: 0 18px 40px rgba(0, 0, 0, 0.25);
+      position: relative;
+      overflow: hidden;
     }
 
-    /* 스도쿠 그리드 이미지 */
-    #grid {
-        width: 100%;
-        position: absolute;
-        z-index: 1;
+    .top {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 16px;
     }
 
-    /* 숫자 오버레이 */
+    .logo {
+      width: 44px;
+      height: 44px;
+      object-fit: contain;
+    }
+
+    h1 {
+      font-size: 1.2rem;
+      margin: 0;
+      line-height: 1.3;
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: 1fr 220px;
+      gap: 16px;
+      align-items: start;
+    }
+
+    .board-wrap {
+      position: relative;
+      width: 100%;
+      aspect-ratio: 1 / 1;
+      border-radius: 10px;
+      overflow: hidden;
+      background: white;
+      border: 3px solid var(--grid-bold);
+    }
+
+    .board {
+      width: 100%;
+      height: 100%;
+      display: grid;
+      grid-template-columns: repeat(9, 1fr);
+      grid-template-rows: repeat(9, 1fr);
+    }
+
     .cell {
-        position: absolute;
-        width: calc(100% / 9);
-        height: calc(100% / 9);
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        font-size: 22px;
-        font-weight: bold;
-        color: black;
-        z-index: 2;
-        pointer-events: none;
+      width: 100%;
+      height: 100%;
+      border: 1px solid var(--grid-line);
+      text-align: center;
+      font-size: clamp(14px, 2.5vw, 26px);
+      font-weight: 700;
+      color: #242424;
+      outline: none;
+      caret-color: transparent;
+      background: transparent;
     }
 
-    /* 주변 이미지 */
-    .decor {
-        position: absolute;
-        z-index: 0;
+    .cell:focus {
+      background: #efe6ff;
+      box-shadow: inset 0 0 0 2px #b990f0;
     }
 
-    #img2 { top: -60px; right: -60px; width: 120px; }
-    #img3 { bottom: -60px; left: -60px; width: 120px; }
-    #img4 { bottom: -40px; right: -40px; width: 120px; }
+    .prefilled {
+      background: #f2f2f2;
+      color: #131313;
+      pointer-events: none;
+    }
+
+    .invalid {
+      color: var(--error);
+      background: #ffe8ed;
+    }
+
+    .solved {
+      color: var(--ok);
+    }
+
+    .cell.bold-right { border-right: 3px solid var(--grid-bold); }
+    .cell.bold-bottom { border-bottom: 3px solid var(--grid-bold); }
+
+    .side {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .panel {
+      background: #fff;
+      border: 1px solid #ece6ff;
+      border-radius: 12px;
+      padding: 12px;
+    }
+
+    .panel h2 {
+      margin: 0 0 8px;
+      font-size: 0.95rem;
+    }
+
+    .controls {
+      display: grid;
+      gap: 8px;
+    }
+
+    button, select {
+      width: 100%;
+      border: 0;
+      border-radius: 10px;
+      padding: 10px;
+      font-weight: 700;
+      font-size: 0.95rem;
+    }
 
     button {
-        position: absolute;
-        bottom: -70px;
-        left: 50%;
-        transform: translateX(-50%);
-        padding: 10px 20px;
-        border: none;
-        background: white;
-        border-radius: 10px;
-        cursor: pointer;
-        font-weight: bold;
+      background: var(--accent);
+      color: #fff;
+      cursor: pointer;
+      transition: transform .1s ease, background .2s ease;
     }
-</style>
+
+    button:hover { background: var(--accent-2); }
+    button:active { transform: translateY(1px); }
+
+    .ghost {
+      background: #ebe3f8;
+      color: #3a2358;
+    }
+
+    .status {
+      min-height: 44px;
+      padding: 10px;
+      border-radius: 10px;
+      font-size: .9rem;
+      background: #f6f2ff;
+      border: 1px dashed #cdb8eb;
+      line-height: 1.35;
+    }
+
+    .decor {
+      position: absolute;
+      width: 90px;
+      opacity: 0.92;
+      pointer-events: none;
+      filter: drop-shadow(0 8px 10px rgba(0,0,0,.2));
+    }
+
+    #decor-pencil { top: -16px; right: 18px; }
+    #decor-anger { bottom: 12px; right: 10px; width: 84px; }
+
+    @media (max-width: 760px) {
+      .layout { grid-template-columns: 1fr; }
+      .decor { display: none; }
+    }
+  </style>
 </head>
-
 <body>
+  <main class="app">
+    <div class="top">
+      <img src="logo.png" alt="두수도쿠 로고" class="logo" />
+      <h1>두수도쿠 웹 버전</h1>
+    </div>
 
-<div class="container">
-    <!-- 1번 이미지 (그리드) -->
-    <img id="grid" src="grid.png">
+    <img id="decor-pencil" class="decor" src="pencil.png" alt="연필 장식" />
+    <img id="decor-anger" class="decor" src="anger.png" alt="캐릭터 장식" />
 
-    <!-- 숫자 들어갈 영역 -->
-    <div id="board"></div>
+    <section class="layout">
+      <div class="board-wrap">
+        <div id="board" class="board" aria-label="스도쿠 보드"></div>
+      </div>
 
-    <!-- 주변 장식 이미지 -->
-    <img id="img2" class="decor" src="pencil.png">
-    <img id="img3" class="decor" src="pencil2.png">
-    <img id="img4" class="decor" src="anger.png">
+      <aside class="side">
+        <div class="panel">
+          <h2>게임 설정</h2>
+          <div class="controls">
+            <select id="difficulty" aria-label="난이도 선택">
+              <option value="35">쉬움 (35칸 비우기)</option>
+              <option value="45" selected>보통 (45칸 비우기)</option>
+              <option value="55">어려움 (55칸 비우기)</option>
+            </select>
+            <button id="new-game">새 게임</button>
+            <button id="check" class="ghost">현재 상태 확인</button>
+            <button id="hint" class="ghost">힌트 1칸</button>
+            <button id="solve" class="ghost">정답 보기</button>
+          </div>
+        </div>
 
-    <button onclick="generateSudoku()">새 게임</button>
-</div>
+        <div class="panel">
+          <h2>상태</h2>
+          <div id="status" class="status">새 게임을 시작하세요.</div>
+        </div>
+      </aside>
+    </section>
+  </main>
 
-<script>
-const board = document.getElementById("board");
+  <script>
+    const boardEl = document.getElementById("board");
+    const statusEl = document.getElementById("status");
+    const difficultyEl = document.getElementById("difficulty");
 
-/* 셀 생성 (위치 정확히 맞춤) */
-function createGrid() {
-    board.innerHTML = "";
+    let solution = [];
+    let puzzle = [];
 
-    for (let row = 0; row < 9; row++) {
-        for (let col = 0; col < 9; col++) {
-            const cell = document.createElement("div");
-            cell.className = "cell";
-
-            cell.style.top = `calc(${row} * (100% / 9))`;
-            cell.style.left = `calc(${col} * (100% / 9))`;
-
-            board.appendChild(cell);
-        }
+    function deepCopy(grid) {
+      return grid.map((row) => [...row]);
     }
-}
 
-/* 기본 완성 스도쿠 */
-function baseSudoku() {
-    return [
+    function baseSudoku() {
+      return [
         [1,2,3,4,5,6,7,8,9],
         [4,5,6,7,8,9,1,2,3],
         [7,8,9,1,2,3,4,5,6],
@@ -118,58 +255,191 @@ function baseSudoku() {
         [3,4,5,6,7,8,9,1,2],
         [6,7,8,9,1,2,3,4,5],
         [9,1,2,3,4,5,6,7,8]
-    ];
-}
-
-/* 랜덤 섞기 */
-function shuffle(board) {
-    for (let i = 0; i < 20; i++) {
-        let band = Math.floor(Math.random() * 3) * 3;
-        let r1 = band + Math.floor(Math.random() * 3);
-        let r2 = band + Math.floor(Math.random() * 3);
-        [board[r1], board[r2]] = [board[r2], board[r1]];
+      ];
     }
-    return board;
-}
 
-/* 일부 제거해서 퍼즐 만들기 */
-function removeNumbers(board, difficulty=40) {
-    let removed = 0;
-    while (removed < difficulty) {
-        let r = Math.floor(Math.random() * 9);
-        let c = Math.floor(Math.random() * 9);
-        if (board[r][c] !== 0) {
-            board[r][c] = 0;
-            removed++;
+    function shuffleRows(grid) {
+      for (let band = 0; band < 3; band++) {
+        const start = band * 3;
+        for (let i = 0; i < 3; i++) {
+          const r1 = start + Math.floor(Math.random() * 3);
+          const r2 = start + Math.floor(Math.random() * 3);
+          [grid[r1], grid[r2]] = [grid[r2], grid[r1]];
         }
+      }
     }
-    return board;
-}
 
-/* 화면에 출력 */
-function render(boardData) {
-    const cells = document.querySelectorAll(".cell");
-    let index = 0;
+    function transpose(grid) {
+      return grid[0].map((_, c) => grid.map((row) => row[c]));
+    }
 
-    for (let r = 0; r < 9; r++) {
+    function shuffleNumbers(grid) {
+      const map = [1,2,3,4,5,6,7,8,9].sort(() => Math.random() - 0.5);
+      return grid.map((row) => row.map((value) => map[value - 1]));
+    }
+
+    function createSolvedBoard() {
+      let grid = baseSudoku();
+      shuffleRows(grid);
+      grid = transpose(grid);
+      shuffleRows(grid);
+      grid = transpose(grid);
+      grid = shuffleNumbers(grid);
+      return grid;
+    }
+
+    function createPuzzle(full, empties) {
+      const out = deepCopy(full);
+      let removed = 0;
+
+      while (removed < empties) {
+        const r = Math.floor(Math.random() * 9);
+        const c = Math.floor(Math.random() * 9);
+        if (out[r][c] !== 0) {
+          out[r][c] = 0;
+          removed++;
+        }
+      }
+      return out;
+    }
+
+    function renderBoard(grid) {
+      boardEl.innerHTML = "";
+      for (let r = 0; r < 9; r++) {
         for (let c = 0; c < 9; c++) {
-            cells[index].textContent = boardData[r][c] !== 0 ? boardData[r][c] : "";
-            index++;
+          const input = document.createElement("input");
+          input.className = "cell";
+          input.type = "text";
+          input.inputMode = "numeric";
+          input.maxLength = 1;
+          input.dataset.row = r;
+          input.dataset.col = c;
+
+          if ((c + 1) % 3 === 0 && c < 8) input.classList.add("bold-right");
+          if ((r + 1) % 3 === 0 && r < 8) input.classList.add("bold-bottom");
+
+          const value = grid[r][c];
+          if (value !== 0) {
+            input.value = value;
+            input.classList.add("prefilled");
+            input.readOnly = true;
+          } else {
+            input.addEventListener("input", onInputCell);
+          }
+
+          boardEl.appendChild(input);
         }
+      }
     }
-}
 
-/* 전체 생성 */
-function generateSudoku() {
-    let sudoku = baseSudoku();
-    sudoku = shuffle(sudoku);
-    sudoku = removeNumbers(sudoku);
-    render(sudoku);
-}
+    function onInputCell(e) {
+      const el = e.target;
+      const raw = el.value.replace(/[^1-9]/g, "");
+      el.value = raw;
+      el.classList.remove("invalid", "solved");
+      updateStatus("입력 중... 숫자 1~9만 가능합니다.");
+    }
 
-createGrid();
-generateSudoku();
-</script>
+    function getCurrentGrid() {
+      const cells = [...document.querySelectorAll(".cell")];
+      const grid = Array.from({ length: 9 }, () => Array(9).fill(0));
 
+      cells.forEach((cell) => {
+        const r = Number(cell.dataset.row);
+        const c = Number(cell.dataset.col);
+        grid[r][c] = cell.value ? Number(cell.value) : 0;
+      });
+
+      return grid;
+    }
+
+    function validateCurrent() {
+      const cells = [...document.querySelectorAll(".cell")];
+      let hasError = false;
+      let isComplete = true;
+
+      cells.forEach((cell) => {
+        if (cell.classList.contains("prefilled")) return;
+        const r = Number(cell.dataset.row);
+        const c = Number(cell.dataset.col);
+        const val = cell.value ? Number(cell.value) : 0;
+
+        cell.classList.remove("invalid", "solved");
+
+        if (val === 0) {
+          isComplete = false;
+          return;
+        }
+
+        if (val !== solution[r][c]) {
+          cell.classList.add("invalid");
+          hasError = true;
+        } else {
+          cell.classList.add("solved");
+        }
+      });
+
+      if (hasError) {
+        updateStatus("틀린 칸이 있어요. 빨간 칸을 다시 확인해 보세요.");
+        return;
+      }
+
+      if (!isComplete) {
+        updateStatus("아직 빈칸이 남아 있어요. 계속 진행해 보세요!");
+        return;
+      }
+
+      updateStatus("정답입니다! 🎉 완벽하게 풀었어요.");
+    }
+
+    function revealOneHint() {
+      const editable = [...document.querySelectorAll(".cell:not(.prefilled)")]
+        .filter((cell) => !cell.value);
+
+      if (editable.length === 0) {
+        updateStatus("힌트를 줄 빈칸이 없어요.");
+        return;
+      }
+
+      const target = editable[Math.floor(Math.random() * editable.length)];
+      const r = Number(target.dataset.row);
+      const c = Number(target.dataset.col);
+
+      target.value = solution[r][c];
+      target.classList.remove("invalid");
+      target.classList.add("solved");
+      updateStatus(`힌트 제공: (${r + 1}, ${c + 1}) 칸을 채웠습니다.`);
+    }
+
+    function showSolution() {
+      const cells = [...document.querySelectorAll(".cell")];
+      cells.forEach((cell) => {
+        const r = Number(cell.dataset.row);
+        const c = Number(cell.dataset.col);
+        cell.value = solution[r][c];
+        cell.classList.remove("invalid");
+      });
+      updateStatus("정답을 모두 표시했습니다.");
+    }
+
+    function updateStatus(message) {
+      statusEl.textContent = message;
+    }
+
+    function newGame() {
+      const empties = Number(difficultyEl.value);
+      solution = createSolvedBoard();
+      puzzle = createPuzzle(solution, empties);
+      renderBoard(puzzle);
+      updateStatus("새 게임 시작! 보드를 채워보세요.");
+    }
+
+    document.getElementById("new-game").addEventListener("click", newGame);
+    document.getElementById("check").addEventListener("click", validateCurrent);
+    document.getElementById("hint").addEventListener("click", revealOneHint);
+    document.getElementById("solve").addEventListener("click", showSolution);
+
+    newGame();
+  </script>
 </body>
 </html>
