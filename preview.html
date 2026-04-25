@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>Custom Sudoku</title>
+
+<style>
+    body {
+        margin: 0;
+        background: #5b2c83; /* 자주색 */
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+        font-family: Arial, sans-serif;
+        overflow: hidden;
+    }
+
+    .container {
+        position: relative;
+        width: 400px;
+        height: 400px;
+    }
+
+    /* 스도쿠 그리드 이미지 */
+    #grid {
+        width: 100%;
+        position: absolute;
+        z-index: 1;
+    }
+
+    /* 숫자 오버레이 */
+    .cell {
+        position: absolute;
+        width: calc(100% / 9);
+        height: calc(100% / 9);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        font-size: 22px;
+        font-weight: bold;
+        color: black;
+        z-index: 2;
+        pointer-events: none;
+    }
+
+    /* 주변 이미지 */
+    .decor {
+        position: absolute;
+        z-index: 0;
+    }
+
+    #img2 { top: -60px; right: -60px; width: 120px; }
+    #img3 { bottom: -60px; left: -60px; width: 120px; }
+    #img4 { bottom: -40px; right: -40px; width: 120px; }
+
+    button {
+        position: absolute;
+        bottom: -70px;
+        left: 50%;
+        transform: translateX(-50%);
+        padding: 10px 20px;
+        border: none;
+        background: white;
+        border-radius: 10px;
+        cursor: pointer;
+        font-weight: bold;
+    }
+</style>
+</head>
+
+<body>
+
+<div class="container">
+    <!-- 1번 이미지 (그리드) -->
+    <img id="grid" src="grid.png">
+
+    <!-- 숫자 들어갈 영역 -->
+    <div id="board"></div>
+
+    <!-- 주변 장식 이미지 -->
+    <img id="img2" class="decor" src="pencil.png">
+    <img id="img3" class="decor" src="pencil2.png">
+    <img id="img4" class="decor" src="anger.png">
+
+    <button onclick="generateSudoku()">새 게임</button>
+</div>
+
+<script>
+const board = document.getElementById("board");
+
+/* 셀 생성 (위치 정확히 맞춤) */
+function createGrid() {
+    board.innerHTML = "";
+
+    for (let row = 0; row < 9; row++) {
+        for (let col = 0; col < 9; col++) {
+            const cell = document.createElement("div");
+            cell.className = "cell";
+
+            cell.style.top = `calc(${row} * (100% / 9))`;
+            cell.style.left = `calc(${col} * (100% / 9))`;
+
+            board.appendChild(cell);
+        }
+    }
+}
+
+/* 기본 완성 스도쿠 */
+function baseSudoku() {
+    return [
+        [1,2,3,4,5,6,7,8,9],
+        [4,5,6,7,8,9,1,2,3],
+        [7,8,9,1,2,3,4,5,6],
+        [2,3,4,5,6,7,8,9,1],
+        [5,6,7,8,9,1,2,3,4],
+        [8,9,1,2,3,4,5,6,7],
+        [3,4,5,6,7,8,9,1,2],
+        [6,7,8,9,1,2,3,4,5],
+        [9,1,2,3,4,5,6,7,8]
+    ];
+}
+
+/* 랜덤 섞기 */
+function shuffle(board) {
+    for (let i = 0; i < 20; i++) {
+        let band = Math.floor(Math.random() * 3) * 3;
+        let r1 = band + Math.floor(Math.random() * 3);
+        let r2 = band + Math.floor(Math.random() * 3);
+        [board[r1], board[r2]] = [board[r2], board[r1]];
+    }
+    return board;
+}
+
+/* 일부 제거해서 퍼즐 만들기 */
+function removeNumbers(board, difficulty=40) {
+    let removed = 0;
+    while (removed < difficulty) {
+        let r = Math.floor(Math.random() * 9);
+        let c = Math.floor(Math.random() * 9);
+        if (board[r][c] !== 0) {
+            board[r][c] = 0;
+            removed++;
+        }
+    }
+    return board;
+}
+
+/* 화면에 출력 */
+function render(boardData) {
+    const cells = document.querySelectorAll(".cell");
+    let index = 0;
+
+    for (let r = 0; r < 9; r++) {
+        for (let c = 0; c < 9; c++) {
+            cells[index].textContent = boardData[r][c] !== 0 ? boardData[r][c] : "";
+            index++;
+        }
+    }
+}
+
+/* 전체 생성 */
+function generateSudoku() {
+    let sudoku = baseSudoku();
+    sudoku = shuffle(sudoku);
+    sudoku = removeNumbers(sudoku);
+    render(sudoku);
+}
+
+createGrid();
+generateSudoku();
+</script>
+
+</body>
+</html>
